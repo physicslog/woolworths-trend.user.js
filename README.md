@@ -15,4 +15,4 @@ A userscript for the Woolworths Trend Chrome Plugin which allows to support it i
 
 Done!
 
-> Find the `coles-trend.user.js` at [here](https://github.com/physicslog/coles-trend.user.js).
+> Find also the `coles-trend.user.js` at [here](https://github.com/physicslog/coles-trend.user.js).
