@@ -2,7 +2,7 @@
 A userscript for the Woolworths Trend Chrome Plugin which allows to support it in **Safari iOS/iPadOS/MacOS** using any userscript manager extension.
 
 **Why I need `woolworths-trend.user.js`?**
-> The use of UserScript is to be able to run the script in the Safari mobile browser too.
+> The use of this UserScript is to be able to run the script in the Safari mobile browser too.
 
 <img height="424" alt="demo" src="https://github.com/user-attachments/assets/349f436a-2b3e-45bf-bf9e-dabe1a37d196" />
 
