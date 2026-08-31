@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name       Woolworths Trend
-// @version     1.0
+// @version     1.1
 // @description A simple extension that adds historical price trends to woolworths.com.au
 // @author      Originally by Data Holdings Group & Userscript made by Damodar Rajbhandari
 // @match       *://*.woolworths.com.au/*
@@ -13,13 +13,17 @@
 // @updateURL   https://github.com/physicslog/woolworths-trend.user.js/raw/refs/heads/main/woolworths-trend.user.js
 // ==/UserScript==
 
-/* file: dhg-styles.css*/
 var styles = `
-/* Card template */
 .dhg-card {
+    display: block;
+    width: 60%;
+    margin: 20px 0;
     border-bottom: 2px solid #ffa500;
-    overflow: hidden;
-    margin-bottom: 20px;
+    background-color: #fff;
+    position: relative;
+    z-index: 1;
+    flex: 0 0 100%;
+    order: 9999;
 }
 .dhg-card-header {
     display: flex;
@@ -48,40 +52,33 @@ var styles = `
     margin-bottom: 1rem;
 }
 `
-/* file: content.js */
+
 var styleSheet = document.createElement("style")
 styleSheet.textContent = styles
 document.head.appendChild(styleSheet)
 
-// Function that checks for URL changes and if so, runs the main funciton
 async function handleUrlChange() {
     const currentUrl = window.location.href;
-    let urlParts = currentUrl.split('/');
-    let productId = urlParts[urlParts.length - 2];
-    let parsedProductId = Number(productId);
-    // Check if parsedProductId is a number and an integer
-    if (!isNaN(parsedProductId) && Number.isInteger(parsedProductId)) {
+    const match = currentUrl.match(/productdetails\/(\d+)/);
+    
+    if (match && match[1]) {
+        let parsedProductId = parseInt(match[1], 10);
+        console.log(`[Woolworths Trend] Valid product ID found: ${parsedProductId}`);
         await main(parsedProductId);
-        //ParsePostPayloadToAPI();
     }
 }
 window.addEventListener('load', handleUrlChange);
-// Observer url changes
+
 const observer = new MutationObserver(() => {
     if (window.location.href !== observer.currentUrl) {
         observer.currentUrl = window.location.href;
         handleUrlChange();
     }
 });
-// Initialize currentUrl with the current window location
 observer.currentUrl = window.location.href;
-// Start observing the document body for mutations
-observer.observe(document.body, {
-    subtree: true,
-    childList: true
-});
+observer.observe(document.body, { subtree: true, childList: true });
 
-/* file: lib/dhg.js */
+/*dhs.js*/
 // Get the data -> JSON
 async function fetchProductData(product_id) {
     const url = `https://data-holdings-fastapi-lp22d.ondigitalocean.app/woolworths/product_search/${product_id}`;
@@ -138,16 +135,16 @@ function insightsArray(priceHistory) {
     let insightsArray = [];
     if (uniquePrices > 1) {
         insightsArray = [
-            `⬇️ Low $${minPrice.toFixed(2)}`,
-            `⬆️ High $${maxPrice.toFixed(2)}`,
-            `➡️ ${priceChanges - 1} Price changes`,
-            `➡️ ${uniquePrices} Different prices`
+            `⬇️ Low $${minPrice.toFixed(2)} `,
+            `⬆️ High $${maxPrice.toFixed(2)} `,
+            `➡️ ${priceChanges - 1} Price changes `,
+            `➡️ ${uniquePrices} Different prices `
         ];
     }
     if (uniquePrices == 1) {
         insightsArray = [
-            `⬇️ Low $${minPrice.toFixed(2)}`,
-            `⬆️ High $${maxPrice.toFixed(2)}`,
+            `⬇️ Low $${minPrice.toFixed(2)} `,
+            `⬆️ High $${maxPrice.toFixed(2)} `,
             `➡️ ${priceChanges - 1} Price changes`,
         ];
     }
@@ -169,7 +166,6 @@ function createLineChartHTML() {
         <canvas id="priceHistoryChart" width="400" height="200"></canvas>
     `;
 }
-
 function renderLineChart(priceHistory) {
     const ctx = document.getElementById('priceHistoryChart')
         .getContext('2d');
@@ -258,8 +254,6 @@ function renderLineChart(priceHistory) {
         }
     });
 }
-
-
 // Function to wait for an element to be available in the DOM
 function waitForElement(selector, callback) {
     const element = document.querySelector(selector);
@@ -291,7 +285,7 @@ function updateDOMWithPriceHistory(filteredHistory, element) {
                 <span class="dhg-title">🔥 PRICE TREND ANALYSIS 🔥</span>
             </div>
             <div class="dhg-card-content">
-                <canvas id="priceHistoryChart" width="400" height="200"></canvas>
+                <canvas id="priceHistoryChart" width="350" height="200"></canvas>
                 <span class="dhg-disclaimer">Price trends are based on data from the Woolworths online website without a specific location selected,
                                             reflecting movements over last 10 price changes. Actual prices may vary by store, especially for fresh food 
                                             and other perishable items.
@@ -312,15 +306,62 @@ function updateDOMWithPriceHistory(filteredHistory, element) {
     }
 }
 // Main functions that strings all the above functions together
+// async function main(productId) {
+//     console.log("main called");
+//     let productData = await fetchProductData(productId);
+//     if (productData.priceHistory.length > 0) {
+//         let productDataDays = addDaysToPriceHistory(productData.priceHistory);
+//         let filteredHistory = filterHistory(productDataDays, 100);
+//         //waitForElement('ar-image-gallery.ar-image-gallery', (element) => {
+//             //waitForElement('h2.product-heading', (element) => {
+//             //waitForElement('div.country-of-origin-label_component_country-of-origin-text__hSVKR', (element) => {    
+//             waitForElement('section[aria-labelledby^="product-panel-title"]', (element) => {   
+//                 //updateDOMWithPriceHistory(element);
+//             updateDOMWithPriceHistory(filteredHistory,element);
+//         });
+//     }
+// }
 async function main(productId) {
+    console.log("main called");
+    const productData = await fetchProductData(productId);
+    if (productData.priceHistory.length > 0) {
+        const productDataDays = addDaysToPriceHistory(productData.priceHistory);
+        const filteredHistory = filterHistory(productDataDays, 100);
+        // Wait for the outer image-gallery wrapper, not the <section> inside it
+        const WRAPPER_SEL = '.image-gallery-price-panel_component-container_image-gallery-price-panel__gs3wg';
+        waitForElement(WRAPPER_SEL, (wrapperEl) => {
+            // Insert our card AFTER the entire gallery block
+            updateDOMWithPriceHistory(filteredHistory, wrapperEl);
+        });
+    }
+}
+/*
+// Updated to work with new version of Woolworths site 03-2025
+// Added wildcard country-of-origin
+async function main(productId) {
+    console.log("main called");
     let productData = await fetchProductData(productId);
     if (productData.priceHistory.length > 0) {
         let productDataDays = addDaysToPriceHistory(productData.priceHistory);
         let filteredHistory = filterHistory(productDataDays, 100);
-        //waitForElement('ar-image-gallery.ar-image-gallery', (element) => {
-        waitForElement('h2.product-heading', (element) => {
-            //updateDOMWithPriceHistory(element);
+        
+        waitForElementMatchingClass('country-of-origin', (element) => {    
             updateDOMWithPriceHistory(filteredHistory, element);
         });
     }
+}
+*/
+// New function to handle wildcard matching
+function waitForElementMatchingClass(classSubstring, callback) {
+    const checkExist = setInterval(() => {
+        const elements = document.querySelectorAll('div'); // Get all div elements
+        const matchedElement = Array.from(elements)
+            .find(el =>
+                el.className.includes(classSubstring) // Check if class contains the substring
+            );
+        if (matchedElement) {
+            clearInterval(checkExist);
+            callback(matchedElement);
+        }
+    }, 500); // Adjust polling interval as needed
 }
